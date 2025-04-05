@@ -1,5 +1,6 @@
 package com.example.userAuth.User.imp;
 
+import com.example.userAuth.OAuth.UserPrincipal;
 import com.example.userAuth.User.Redis.RedisTokenBlockListService;
 import com.example.userAuth.User.User;
 import com.example.userAuth.User.UserRepository;
@@ -63,7 +64,8 @@ public class UserImp implements UserServices {
     public String loginUser(String email,String password){
         User user = userRepository.findByEmail(email).filter(CurrentUser -> checkPassword(password, CurrentUser.getPassword()))
                 .orElseThrow(() -> new IllegalArgumentException("Invalid Credentials")) ;
-        return jwtUtil.GenerateToken(user);
+        UserPrincipal userPrincipal = UserPrincipal.create(user, null);
+        return jwtUtil.generateTokenFromUserPrincipal(userPrincipal);
     }
 
     @Override
@@ -92,16 +94,21 @@ public class UserImp implements UserServices {
     @Override
     public void logoutUser(HttpServletRequest request) {
         String token = jwtUtil.ExtractToken(request);
-        if(token == null){
+
+        if (token == null) {
             throw new IllegalArgumentException("Invalid Token");
         }
-        if (tokenBlockListService.isTokenBlocked(token)){
+
+        if (tokenBlockListService.isTokenBlocked(token)) {
             throw new IllegalArgumentException("Token is already blocked");
         }
+
+        // ✅ Prevent adding already expired tokens
         long expirationTime = jwtUtil.getExpirationTime(token) - System.currentTimeMillis();
         if (expirationTime > 0) {
             tokenBlockListService.addTokenToBlockList(token, expirationTime);
         }
     }
+
 
 }

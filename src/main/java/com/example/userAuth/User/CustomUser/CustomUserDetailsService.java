@@ -1,11 +1,12 @@
-package com.example.userAuth.User;
+package com.example.userAuth.User.CustomUser;
 
+import com.example.userAuth.User.CustomUserDetails;
+import com.example.userAuth.User.UserRepository;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import java.util.Collections;
 
@@ -21,9 +22,14 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        com.example.userAuth.User.User userEntity = userRepository.findByUsername(username)
+        com.example.userAuth.User.User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        return new User(userEntity.getUsername(), userEntity.getPassword(), Collections.emptyList()); // Ensure password is used
+        return new CustomUserDetails(
+                user.getId(),       // Add ID
+                user.getUsername(),
+                user.getEmail(),// Use correct password
+                Collections.emptyList() // Roles or authorities can be added here
+        );// Ensure password is used
     }
 }
