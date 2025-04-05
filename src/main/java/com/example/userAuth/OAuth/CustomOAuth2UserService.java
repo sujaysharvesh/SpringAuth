@@ -4,10 +4,10 @@ import com.example.userAuth.User.User;
 import com.example.userAuth.User.UserRepository;
 import com.example.userAuth.User.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
-import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
-import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
 import com.example.userAuth.User.User.AuthProvider;
 
@@ -15,7 +15,7 @@ import java.util.Optional;
 
 
 @Service
-public class OAuthUserService extends DefaultOAuth2UserService {
+public class CustomOAuth2UserService extends OidcUserService {
 
     @Autowired
     private UserRepository userRepository;
@@ -24,13 +24,13 @@ public class OAuthUserService extends DefaultOAuth2UserService {
     private JwtUtil jwtUtil;
 
     @Override
-    public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
-        OAuth2User oAuth2User = super.loadUser(userRequest);
+    public OidcUser loadUser(OidcUserRequest userRequest) throws OAuth2AuthenticationException {
+        OidcUser oidcUser = super.loadUser(userRequest);
 
         String registrationId = userRequest.getClientRegistration().getRegistrationId();
         AuthProvider provider = AuthProvider.valueOf(registrationId.toUpperCase());
 
-        OAuth2UserInfo userInfo = OAuth2UserInfoFactory.getOAuth2InfoFactory(provider, oAuth2User.getAttributes());
+        OAuth2UserInfo userInfo = OAuth2UserInfoFactory.getOAuth2InfoFactory(provider, oidcUser.getAttributes());
         Optional<User> userOptional = userRepository.findByEmail(userInfo.getEmail());
         User user;
         if(userOptional.isPresent()) {
@@ -45,12 +45,12 @@ public class OAuthUserService extends DefaultOAuth2UserService {
         } else {
             user = registerNewuser(provider, userInfo);
         }
-        return UserPrincipal.create(user, oAuth2User.getAttributes());
+        return UserPrincipal.create(user, oidcUser.getAttributes(), oidcUser.getIdToken(), oidcUser.getUserInfo());
     }
 
 
     private User registerNewuser(AuthProvider provider, OAuth2UserInfo userInfo) {
-        User user = new User();
+        User user = User.createOAuthUser(userInfo.getEmail(), userInfo.getName(), userInfo.getId(), provider);
         user.setUsername(userInfo.getName());
         user.setEmail(userInfo.getEmail());
         user.setProvider(String.valueOf(provider));

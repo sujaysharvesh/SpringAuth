@@ -23,8 +23,6 @@ public class User {
     @Column(name = "email", nullable = false, unique = true)
     private String email;
 
-    @NotNull(message = "Password is required")
-    @Size(min = 8, message = "Password must be at least 8 characters long") // ✅ Fixed validation
     @Column(name = "password", nullable = true)
     private String password;
 

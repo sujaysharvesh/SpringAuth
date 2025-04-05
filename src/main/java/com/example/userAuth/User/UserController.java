@@ -34,7 +34,7 @@ public class UserController {
     @Autowired
     private UserDTO userDTO;
 
-    @GetMapping("/")
+    @GetMapping("/home")
     public String Home() {
         return "Hello";
     }

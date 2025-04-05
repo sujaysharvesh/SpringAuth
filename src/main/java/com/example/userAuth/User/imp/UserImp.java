@@ -51,7 +51,7 @@ public class UserImp implements UserServices {
             throw new IllegalArgumentException("Email already exists");
         }
         String hashedPassword = hashPassword(password);
-        User user = new User(email, hashedPassword, username, false);
+        User user = User.createLocalUser(email, hashedPassword, username);
         return userRepository.save(user);
     }
 
@@ -64,7 +64,7 @@ public class UserImp implements UserServices {
     public String loginUser(String email,String password){
         User user = userRepository.findByEmail(email).filter(CurrentUser -> checkPassword(password, CurrentUser.getPassword()))
                 .orElseThrow(() -> new IllegalArgumentException("Invalid Credentials")) ;
-        UserPrincipal userPrincipal = UserPrincipal.create(user, null);
+        UserPrincipal userPrincipal = UserPrincipal.localLogin(user);
         return jwtUtil.generateTokenFromUserPrincipal(userPrincipal);
     }
 

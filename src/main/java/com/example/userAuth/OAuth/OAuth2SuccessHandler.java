@@ -3,11 +3,12 @@ package com.example.userAuth.OAuth;
 import com.example.userAuth.User.UserRepository;
 import com.example.userAuth.User.security.JwtUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.jsonwebtoken.io.IOException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
+import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
@@ -15,13 +16,17 @@ import java.util.Map;
 
 
 @Component
-public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     @Autowired
     private JwtUtil jwtUtil;
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private AuthorizationRequestRepository<OAuth2AuthorizationRequest> authorizationRequestRepository;
+
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
@@ -33,6 +38,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         // Generate JWT token (same as your regular login)
         String token = jwtUtil.generateTokenFromUserPrincipal(userPrincipal);
 
+        // Clear authentication attributes
+        clearAuthenticationAttributes(request, response);
+
         // Return token in response (or redirect with token)
         response.setContentType("application/json");
         response.getWriter().write(
@@ -42,5 +50,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                                 "email", userPrincipal.getEmail())
                 )
         );
+    }
+    protected void clearAuthenticationAttributes(HttpServletRequest request, HttpServletResponse response) {
+        super.clearAuthenticationAttributes(request);
+        authorizationRequestRepository.removeAuthorizationRequest(request, response);
     }
 }

@@ -80,15 +80,6 @@ public class JwtUtil {
         }
     }
 
-
-    public UserPrincipal verifyToken(String token) {
-        Claims claims = Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload();
-        UUID userId = UUID.fromString(claims.getSubject());
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        return UserPrincipal.create(user, claims);
-    }
-
     public Authentication getAuthentication(String token) {
         Claims claims = Jwts.parser()
                 .setSigningKey(secretKey)
@@ -105,7 +96,7 @@ public class JwtUtil {
                         .map(SimpleGrantedAuthority::new)
                         .collect(Collectors.toList());
 
-        UserPrincipal principal = UserPrincipal.create(user, claims);
+        UserPrincipal principal = UserPrincipal.create(claims);
         UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(principal, token, authorities);
         return usernamePasswordAuthenticationToken;
     }
